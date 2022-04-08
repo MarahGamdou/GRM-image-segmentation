@@ -28,3 +28,6 @@ python interactive_segmentation.py Abyssinian_82.jpg -a Push-Relabel -s 25
 
 the images used in this project are taken from Oxford-IIIT Pet Dataset dataset : https://www.robots.ox.ac.uk/~vgg/data/pets/
 
+# group Members 
+* Chady Raach
+* Marah Gamdou
