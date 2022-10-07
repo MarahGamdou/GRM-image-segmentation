@@ -21,27 +21,27 @@ object_, background = "object", "background"
 
 
 def parseArgs():
-    """ Parse arguments 
-    """
+    """Parse arguments"""
+
     def algorithm(string):
         if string in Algorithms:
             return string
-        raise argparse.ArgumentTypeError(
-            "algorithm should be one :", Algorithms.keys())
+        raise argparse.ArgumentTypeError("algorithm should be one :", Algorithms.keys())
 
     parser = argparse.ArgumentParser()
     parser.add_argument("imagefile")
-    parser.add_argument("--imagesize", "-s",
-                        default=20, type=int,
-                        help="Defaults to 20x20")
-    parser.add_argument("--cutalgo", "-a", default="Push-Relabel", type=algorithm)  
+    parser.add_argument(
+        "--imagesize", "-s", default=20, type=int, help="Defaults to 20x20"
+    )
+    parser.add_argument("--cutalgo", "-a", default="Push-Relabel", type=algorithm)
     return parser.parse_args()
 
+
 def show_image(image):
-    """ Show image on which the segmentation will be performed 
+    """Show image on which the segmentation will be performed
 
     Args:
-        image (array): image on which the segmentation will be performed 
+        image (array): image on which the segmentation will be performed
     """
     windowname = "MaxFlow"
     cv2.namedWindow(windowname, cv2.WINDOW_NORMAL)
@@ -52,11 +52,11 @@ def show_image(image):
 
 
 def connect_sink_source(image, imagefile):
-    """ Connect the sink and source to pixels from the image 
+    """Connect the sink and source to pixels from the image
 
     Args:
-        image (array): image to be segmented 
-        imagefile (string): image file name 
+        image (array): image to be segmented
+        imagefile (string): image file name
     """
 
     def draw_seeds(x, y, pixelType):
@@ -65,8 +65,13 @@ def connect_sink_source(image, imagefile):
         else:
             color, code = background_color, background_num
         cv2.circle(image, (x, y), radius, color, thickness)
-        cv2.circle(initialisation, (x // scaling_factor, y // scaling_factor),
-                   radius // scaling_factor, code, thickness)
+        cv2.circle(
+            initialisation,
+            (x // scaling_factor, y // scaling_factor),
+            radius // scaling_factor,
+            code,
+            thickness,
+        )
 
     def mouse(event, x, y, flags, pixelType):
         global drawing
@@ -85,7 +90,7 @@ def connect_sink_source(image, imagefile):
         windowname = "connecting " + pixelType + "pixels"
         cv2.namedWindow(windowname, cv2.WINDOW_AUTOSIZE)
         cv2.setMouseCallback(windowname, mouse, pixelType)
-        while (1):
+        while 1:
             cv2.imshow(windowname, image)
             if cv2.waitKey(1) & 0xFF == 27:
                 break
@@ -106,18 +111,19 @@ def connect_sink_source(image, imagefile):
     #    initialisation = cv2.imread('tests/init_' + imagefile, cv2.IMREAD_GRAYSCALE)
     return initialisation, image
 
+
 def build_graph(image, imagefile):
-    """Build the graph from the image 
+    """Build the graph from the image
 
     Args:
-        image (array):image from which the graph will be built 
-        imagefile (string): image file name 
+        image (array):image from which the graph will be built
+        imagefile (string): image file name
 
     Returns:
-        nx graph, array: the created graph, the image with connections ti image and seed 
+        nx graph, array: the created graph, the image with connections ti image and seed
     """
     nodes = image.size + 2
-    graph_adj = np.zeros((nodes, nodes), dtype='int32')
+    graph_adj = np.zeros((nodes, nodes), dtype="int32")
     source_flow = pixel_similarity(graph_adj, image)
     initialisation, initialised_Image = connect_sink_source(image, imagefile)
     unary_similarity(graph_adj, initialisation, source_flow)
@@ -129,8 +135,9 @@ def build_graph(image, imagefile):
     nx.set_edge_attributes(G, flow, "flow")
     return G, initialised_Image
 
+
 def similarity(ip, iq):
-    """ Measure pixel similarity 
+    """Measure pixel similarity
 
     Args:
         ip (float): pixel intensity
@@ -139,18 +146,18 @@ def similarity(ip, iq):
     Returns:
         int: similarity measure
     """
-    s = 100 * exp(- pow(int(ip) - int(iq), 2) / (2 * pow(sigma, 2)))
+    s = 100 * exp(-pow(int(ip) - int(iq), 2) / (2 * pow(sigma, 2)))
     return s
 
 
 def pixel_similarity(graph, image):
-    """Set pixel cost 
+    """Set pixel cost
 
     Args:
-        graph (array): graph in array form 
-        image (array): the image to be segmented 
+        graph (array): graph in array form
+        image (array): the image to be segmented
     Returns:
-        int: the flow that will be used to link the source and sink 
+        int: the flow that will be used to link the source and sink
     """
     source_flow = -float("inf")
     H, W = image.shape
@@ -167,12 +174,12 @@ def pixel_similarity(graph, image):
                 pixel_sim = similarity(image[i][j], image[i][j + 1])
                 graph[x][y] = graph[y][x] = pixel_sim
                 source_flow = max(source_flow, pixel_sim)
-            if i-1 > -1:
+            if i - 1 > -1:
                 y = (i - 1) * W + j  # pixel above
                 pixel_sim = similarity(image[i][j], image[i - 1][j])
                 graph[x][y] = graph[y][x] = pixel_sim
                 source_flow = max(source_flow, pixel_sim)
-            if j-1 > -1:  # pixel to the left
+            if j - 1 > -1:  # pixel to the left
                 y = i * W + j - 1
                 pixel_sim = similarity(image[i][j], image[i][j - 1])
                 graph[x][y] = graph[y][x] = pixel_sim
@@ -181,12 +188,12 @@ def pixel_similarity(graph, image):
 
 
 def unary_similarity(graph, initialisation, source_flow):
-    """Set unary cost 
+    """Set unary cost
 
     Args:
-        graph (array): graph in array form 
-        initialisation (array): the links to source and sink set manually 
-        source_flow (int): the flow that will be used to link the source and sink 
+        graph (array): graph in array form
+        initialisation (array): the links to source and sink set manually
+        source_flow (int): the flow that will be used to link the source and sink
     """
     H, W = initialisation.shape
     for i in range(H):
@@ -199,14 +206,14 @@ def unary_similarity(graph, initialisation, source_flow):
 
 
 def displaySegmentation(components, image):
-    """ Display Generated Segmentation 
+    """Display Generated Segmentation
 
     Args:
-        components (set): all strongly connected componenets 
-        image (array):the image to be segmented 
+        components (set): all strongly connected componenets
+        image (array):the image to be segmented
 
     Returns:
-       array: image with segmentation applied 
+       array: image with segmentation applied
     """
     segmented = np.zeros_like(image)
     H, W = image.shape
@@ -223,43 +230,43 @@ def displaySegmentation(components, image):
 
 
 def Segmentation(imagefile, size=(30, 30), algo="Ford-Fulkerson"):
-    """Perform segmentation 
+    """Perform segmentation
 
     Args:
-        imagefile (string): image file 
+        imagefile (string): image file
         size (tuple, optional): downscaled image size . Defaults to (30, 30).
         algo (str, optional): min-cut algorithm to use. Defaults to "Ford-Fulkerson".
     """
-    if not(os.path.isdir("tests")):
+    if not (os.path.isdir("tests")):
         os.mkdir("tests")
     subdir = os.path.join("tests", f"{algo}")
-    if not(os.path.isdir(subdir)):
+    if not (os.path.isdir(subdir)):
         os.mkdir(subdir)
     subsubdir = os.path.join(subdir, f"{size[0]}_{size[0]}")
-    if not(os.path.isdir(subsubdir)):
+    if not (os.path.isdir(subsubdir)):
         os.mkdir(subsubdir)
 
-    image = cv2.imread('data/'+imagefile, cv2.IMREAD_GRAYSCALE)
+    image = cv2.imread("data/" + imagefile, cv2.IMREAD_GRAYSCALE)
     global scaling_factor
     scaling_factor = image.shape[0] // size[0]
-    print('scaling_factor', scaling_factor)
+    print("scaling_factor", scaling_factor)
     image = cv2.resize(image, size)
-    print('image.shape', image.shape)
+    print("image.shape", image.shape)
     graph, initialised_Image = build_graph(image, imagefile)
-    print('number of nodes', len(graph))
-    print('number of edges', len(graph.edges()))
-    cv2.imwrite('tests/init_' + imagefile, initialised_Image)
+    print("number of nodes", len(graph))
+    print("number of edges", len(graph.edges()))
+    cv2.imwrite("tests/init_" + imagefile, initialised_Image)
 
     global source, sink
     source += len(graph)
     sink += len(graph)
     s = time.time()
-    if algo == 'Ford-Fulkerson':
+    if algo == "Ford-Fulkerson":
         print("Ford-Fulkerson ... ")
         FF = FordFulkerson(graph)
         FF.min_cut(source, sink)
-        capacities = nx.get_edge_attributes(FF.frozen_graph, 'capacity')
-        flows = nx.get_edge_attributes(FF.frozen_graph, 'flow')
+        capacities = nx.get_edge_attributes(FF.frozen_graph, "capacity")
+        flows = nx.get_edge_attributes(FF.frozen_graph, "flow")
         cuts = []
         for edge in capacities.keys():
             if capacities[edge] == flows[edge]:
@@ -271,12 +278,12 @@ def Segmentation(imagefile, size=(30, 30), algo="Ford-Fulkerson"):
         components = list(nx.strongly_connected_components(FF.dummy_graph))
         image = displaySegmentation(components, image)
 
-    if algo == 'Push-Relabel':
+    if algo == "Push-Relabel":
         print("Push Relabel ... ")
         PR = PushRelabel(graph, source, sink)
         PR.min_cut()
-        capacities = nx.get_edge_attributes(PR.graph, 'capacity')
-        flows = nx.get_edge_attributes(PR.graph, 'flow')
+        capacities = nx.get_edge_attributes(PR.graph, "capacity")
+        flows = nx.get_edge_attributes(PR.graph, "flow")
         cuts = []
         for edge in capacities.keys():
             if capacities[edge] == flows[edge]:
@@ -294,7 +301,7 @@ def Segmentation(imagefile, size=(30, 30), algo="Ford-Fulkerson"):
     print(f"execution time: {time.time() - s:.4f}")
     image = cv2.resize(image, (0, 0), fx=scaling_factor, fy=scaling_factor)
     show_image(image)
-    savename = os.path.join(subsubdir, 'cut_' + imagefile)
+    savename = os.path.join(subsubdir, "cut_" + imagefile)
     cv2.imwrite(savename, image)
     print("saved segmented image as", savename)
     compute_score(imagefile.split(".")[0], image, subsubdir)

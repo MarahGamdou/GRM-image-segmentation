@@ -3,9 +3,9 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 
-class FordFulkerson():
+class FordFulkerson:
     def __init__(self, graph):
-        self.graph = graph 
+        self.graph = graph
         # self.n_nodes = n_nodes
         # self.graph = nx.DiGraph()
         # n = int(np.sqrt(n_nodes))
@@ -20,7 +20,7 @@ class FordFulkerson():
         """Add edges to the graph
 
         Args:
-            edges (list): edges with their capacities 
+            edges (list): edges with their capacities
         """
         for edge in edges:
             i, j, c = edge
@@ -34,7 +34,7 @@ class FordFulkerson():
             t (int): sink
 
         Returns:
-            generator : all paths between s and t 
+            generator : all paths between s and t
         """
         paths = nx.all_simple_paths(self.dummy_graph, source=s, target=t)
         return paths
@@ -46,7 +46,7 @@ class FordFulkerson():
             path (list): a given path
 
         Returns:
-           int: allowable flow 
+           int: allowable flow
         """
         flow = []
         for i in range(1, len(path)):
@@ -58,10 +58,10 @@ class FordFulkerson():
         """Select the minimum s-t path
 
         Args:
-            paths (iterator): all paths 
+            paths (iterator): all paths
 
         Returns:
-            iterator, int :mininmum path, respective flow 
+            iterator, int :mininmum path, respective flow
         """
         for path in paths:
             flow = self.get_possible_flow(path)
@@ -70,7 +70,7 @@ class FordFulkerson():
         return None, None
 
     def min_cut(self, s, t):
-        """find min-cut 
+        """find min-cut
 
         Args:
             s (int): source
@@ -84,22 +84,51 @@ class FordFulkerson():
                 for i in range(1, len(path)):
                     u = path[i - 1]
                     v = path[i]
-                    if not(self.graph.has_edge(v, u)):
+                    if not (self.graph.has_edge(v, u)):
                         self.graph.add_edge(v, u, capacity=0, flow=0)
                     current_flow = self.graph.get_edge_data(u, v)["flow"]
                     reverse_capacity = self.graph.get_edge_data(v, u)["capacity"]
-                    self.graph.update([(u, v,
-                                        {"flow": current_flow + possible_flow,
-                                         "capacity": self.graph.get_edge_data(u, v)["capacity"]}),
-                                       (v, u,
-                                        {"capacity": reverse_capacity + possible_flow,
-                                         "flow": self.graph.get_edge_data(v, u)["flow"] or 0})])
-                    if self.graph.get_edge_data(u, v)["capacity"] == self.graph.get_edge_data(u, v)["flow"]:
+                    self.graph.update(
+                        [
+                            (
+                                u,
+                                v,
+                                {
+                                    "flow": current_flow + possible_flow,
+                                    "capacity": self.graph.get_edge_data(u, v)[
+                                        "capacity"
+                                    ],
+                                },
+                            ),
+                            (
+                                v,
+                                u,
+                                {
+                                    "capacity": reverse_capacity + possible_flow,
+                                    "flow": self.graph.get_edge_data(v, u)["flow"] or 0,
+                                },
+                            ),
+                        ]
+                    )
+                    if (
+                        self.graph.get_edge_data(u, v)["capacity"]
+                        == self.graph.get_edge_data(u, v)["flow"]
+                    ):
                         self.dummy_graph.remove_edge(u, v)
             paths = self.find_path(s, t)
         for edge in self.frozen_graph.edges():
             u, v = edge
-            self.frozen_graph.update([(u,
-                                       v,
-                                       {"capacity": self.frozen_graph.get_edge_data(u, v)["capacity"],
-                                        "flow": self.graph.get_edge_data(u, v)["flow"]})])
+            self.frozen_graph.update(
+                [
+                    (
+                        u,
+                        v,
+                        {
+                            "capacity": self.frozen_graph.get_edge_data(u, v)[
+                                "capacity"
+                            ],
+                            "flow": self.graph.get_edge_data(u, v)["flow"],
+                        },
+                    )
+                ]
+            )

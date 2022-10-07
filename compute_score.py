@@ -10,7 +10,10 @@ def compute_score(image_name, mask, path):
     if os.path.isfile(f"data/{image_name}.png"):
         gt = cv2.imread(f"data/{image_name}.png")
         gt = (np.ma.filled(gt == 1) * 255).mean(axis=2)
-        score = max(np.mean(np.ma.filled(mask > 0) * 255 == gt), np.mean((1 - np.ma.filled(mask > 0)) * 255 == gt))
+        score = max(
+            np.mean(np.ma.filled(mask > 0) * 255 == gt),
+            np.mean((1 - np.ma.filled(mask > 0)) * 255 == gt),
+        )
         print(f"Score: {score:.4f}")
         fig, ax = plt.subplots(ncols=2, figsize=[15, 8])
         ax[0].imshow(img)
